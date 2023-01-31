@@ -34,11 +34,11 @@ pub(crate) fn get_config() -> Result<Config, Error> {
     match matches.subcommand() {
         Some((SYMBOL_TO_GENE, sub_matches)) => {
             let species =
-                Species::parse_str(sub_matches.get_one::<String>(SPECIES)
-                    .unwrap_or(&HOMO_SAPIENS.to_string()))?;
+                Species::try_from(sub_matches.get_one::<String>(SPECIES).cloned()
+                    .unwrap_or(HOMO_SAPIENS.to_string()))?;
             let symbol =
-                Symbol::parse_str(
-                    sub_matches.get_one::<String>(SYMBOL)
+                Symbol::try_from(
+                    sub_matches.get_one::<String>(SYMBOL).cloned()
                         .ok_or_else(|| {
                             Error::from(format!("Missing argument {SYMBOL}"))
                         })?
