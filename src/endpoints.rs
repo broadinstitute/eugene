@@ -1,7 +1,7 @@
 use std::string::ParseError;
 use reqwest::Url;
 
-pub(crate) mod cross;
+pub mod xrefs;
 
 const BASE_URL: &str = "https://rest.ensembl.org";
 
