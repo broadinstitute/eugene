@@ -1,23 +1,38 @@
-use clap::{Arg, command, Command};
+use clap::{command, Command};
 use eugene::error::Error;
 use eugene::model::{Species, Symbol};
 
 pub(crate) enum Config {
-    Xrefs(XrefsConfig)
+    Xrefs(XrefsConfig),
+    Lookup(LookupConfig),
+    Util(UtilConfig)
 }
 
 pub(crate) enum XrefsConfig {
     Symbol { species: Species, symbol: Symbol }
 }
 
+pub(crate) enum LookupConfig {
+    Symbol { species: Species, symbol: Symbol }
+}
+
+pub(crate) enum UtilConfig {
+    SymbolToGeneId { species: Species, symbol: Symbol }
+}
+
 mod section {
     pub(crate) const XREFS: &str = "xrefs";
-    pub(crate) const LIST: &[&str] = &[XREFS];
+    pub(crate) const LOOKUP: &str = "lookup";
+    pub(crate) const UTIL: &str = "util";
+    pub(crate) const LIST: &[&str] = &[XREFS, LOOKUP, UTIL];
 }
 
 mod cmd {
     pub(crate) const SYMBOL: &str = "symbol";
+    pub(crate) const SYMBOL_TO_GENE_ID: &str = "symbol-to-gene-id";
     pub(crate) const XREFS_CMDS: &[&str] = &[SYMBOL];
+    pub(crate) const LOOKUP_CMDS: &[&str] = &[SYMBOL];
+    pub(crate) const UTIL_CMDS: &[&str] = &[SYMBOL_TO_GENE_ID];
 }
 
 mod arg {
@@ -56,8 +71,6 @@ mod get {
     }
 }
 
-const SYMBOL_TO_GENE: &str = "symbol-to-gene";
-
 fn unknown_cmd_error(cmd: &str, expected: &[&str]) -> Error {
     let message =
         if expected.len() == 1 {
@@ -93,15 +106,24 @@ pub(crate) fn get_config() -> Result<Config, Error> {
                 )
         )
         .subcommand(
-            Command::new(SYMBOL_TO_GENE)
-                .about("Map symbol to gene id")
-                .arg(Arg::new("species")
-                    .short('p')
-                    .long("species")
-                    .required(false))
-                .arg(Arg::new("symbol")
-                    .short('s')
-                    .long("symbol"))
+            Command::new(section::LOOKUP)
+                .subcommand_required(true)
+                .arg_required_else_help(true)
+                .subcommand(
+                    Command::new(cmd::SYMBOL)
+                        .arg(arg::species())
+                        .arg(arg::symbol())
+                )
+        )
+        .subcommand(
+            Command::new(section::UTIL)
+                .subcommand_required(true)
+                .arg_required_else_help(true)
+                .subcommand(
+                    Command::new(cmd::SYMBOL_TO_GENE_ID)
+                        .arg(arg::species())
+                        .arg(arg::symbol())
+                )
         ).get_matches();
     match matches.subcommand() {
         Some((section::XREFS, section_matches)) => {
@@ -116,6 +138,36 @@ pub(crate) fn get_config() -> Result<Config, Error> {
                 }
                 None => {
                     Err(missing_cmd_error(cmd::XREFS_CMDS))
+                }
+            }
+        }
+        Some((section::LOOKUP, section_matches)) => {
+            match section_matches.subcommand() {
+                Some((cmd::SYMBOL, cmd_matches)) => {
+                    let species = get::species(cmd_matches)?;
+                    let symbol = get::symbol(cmd_matches)?;
+                    Ok(Config::Lookup(LookupConfig::Symbol { species, symbol }))
+                }
+                Some((unknown_cmd, _)) => {
+                    Err(unknown_cmd_error(unknown_cmd, cmd::LOOKUP_CMDS))
+                }
+                None => {
+                    Err(missing_cmd_error(cmd::LOOKUP_CMDS))
+                }
+            }
+        }
+        Some((section::UTIL, section_matches)) => {
+            match section_matches.subcommand() {
+                Some((cmd::SYMBOL_TO_GENE_ID, cmd_matches)) => {
+                    let species = get::species(cmd_matches)?;
+                    let symbol = get::symbol(cmd_matches)?;
+                    Ok(Config::Util(UtilConfig::SymbolToGeneId { species, symbol }))
+                }
+                Some((unknown_cmd, _)) => {
+                    Err(unknown_cmd_error(unknown_cmd, cmd::UTIL_CMDS))
+                }
+                None => {
+                    Err(missing_cmd_error(cmd::UTIL_CMDS))
                 }
             }
         }

@@ -9,7 +9,7 @@ pub struct Species(String);
 pub struct Symbol(String);
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Gene(String);
+pub struct GeneId(String);
 
 impl TryFrom<&str> for Species {
     type Error = Error;
@@ -51,21 +51,21 @@ impl Display for Symbol {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.0) }
 }
 
-impl TryFrom<&str> for Gene {
+impl TryFrom<&str> for GeneId {
     type Error = Error;
 
     fn try_from(string: &str) -> Result<Self, Self::Error> {
-        Gene::try_from(string.to_string())
+        GeneId::try_from(string.to_string())
     }
 }
 
-impl TryFrom<String> for Gene {
+impl TryFrom<String> for GeneId {
     type Error = Error;
 
-    fn try_from(string: String) -> Result<Self, Self::Error> { Ok(Gene(string)) }
+    fn try_from(string: String) -> Result<Self, Self::Error> { Ok(GeneId(string)) }
 }
 
-impl Display for Gene {
+impl Display for GeneId {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }

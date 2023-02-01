@@ -1,6 +1,6 @@
 pub mod endpoints;
 pub mod model;
 pub mod error;
+pub mod util;
 
-pub use crate::endpoints::xrefs::symbol_to_gene;
 
