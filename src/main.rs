@@ -38,6 +38,9 @@ fn lookup(lookup_config: LookupConfig) -> Result<(), Error> {
             println!("{}", entry.id);
             Ok(())
         }
+        LookupConfig::Symbols { species, symbols } => {
+            todo!()
+        }
     }
 }
 

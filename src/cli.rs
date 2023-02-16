@@ -13,7 +13,8 @@ pub(crate) enum XrefsConfig {
 }
 
 pub(crate) enum LookupConfig {
-    Symbol { species: Species, symbol: Symbol }
+    Symbol { species: Species, symbol: Symbol },
+    Symbols { species: Species, symbols: Vec<Symbol> }
 }
 
 pub(crate) enum UtilConfig {
@@ -29,9 +30,10 @@ mod section {
 
 mod cmd {
     pub(crate) const SYMBOL: &str = "symbol";
+    pub(crate) const SYMBOLS: &str = "symbols";
     pub(crate) const SYMBOL_TO_GENE_ID: &str = "symbol-to-gene-id";
     pub(crate) const XREFS_CMDS: &[&str] = &[SYMBOL];
-    pub(crate) const LOOKUP_CMDS: &[&str] = &[SYMBOL];
+    pub(crate) const LOOKUP_CMDS: &[&str] = &[SYMBOL, SYMBOLS];
     pub(crate) const UTIL_CMDS: &[&str] = &[SYMBOL_TO_GENE_ID];
 }
 
@@ -40,12 +42,14 @@ mod arg {
 
     pub(crate) const SPECIES: &str = "species";
     pub(crate) const SYMBOL: &str = "symbol";
+    pub(crate) const SYMBOLS: &str = "symbols";
 
     pub(crate) fn species() -> Arg {
         Arg::new(SPECIES).short('p').long(SPECIES).required(false)
     }
 
     pub(crate) fn symbol() -> Arg { Arg::new(SYMBOL).short('s').long(SYMBOL) }
+    pub(crate) fn symbols() -> Arg { Arg::new(SYMBOLS).short('l').long(SYMBOLS) }
 }
 
 mod get {
@@ -68,6 +72,15 @@ mod get {
                     Error::from(format!("Missing argument {}", arg::SYMBOL))
                 })?
         )
+    }
+
+    pub(crate) fn symbols(matches: &ArgMatches) -> Result<Vec<Symbol>, Error> {
+        let symbols: Result<Vec<Symbol>, Error> =
+            matches.get_one::<String>(arg::SYMBOLS).ok_or_else(|| {
+                Error::from(format!("Missing argument {}", arg::SYMBOL))
+            })?.as_str().split(',').map(Symbol::try_from)
+                .collect();
+        symbols
     }
 }
 
@@ -114,6 +127,11 @@ pub(crate) fn get_config() -> Result<Config, Error> {
                         .arg(arg::species())
                         .arg(arg::symbol())
                 )
+                .subcommand(
+                    Command::new(cmd::SYMBOLS)
+                        .arg(arg::species())
+                        .arg(arg::symbols())
+                )
         )
         .subcommand(
             Command::new(section::UTIL)
@@ -147,6 +165,11 @@ pub(crate) fn get_config() -> Result<Config, Error> {
                     let species = get::species(cmd_matches)?;
                     let symbol = get::symbol(cmd_matches)?;
                     Ok(Config::Lookup(LookupConfig::Symbol { species, symbol }))
+                }
+                Some((cmd::SYMBOLS, cmd_matches)) => {
+                    let species = get::species(cmd_matches)?;
+                    let symbols = get::symbols(cmd_matches)?;
+                    Ok(Config::Lookup(LookupConfig::Symbols { species, symbols }))
                 }
                 Some((unknown_cmd, _)) => {
                     Err(unknown_cmd_error(unknown_cmd, cmd::LOOKUP_CMDS))
