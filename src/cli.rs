@@ -18,7 +18,8 @@ pub(crate) enum LookupConfig {
 }
 
 pub(crate) enum UtilConfig {
-    SymbolToGeneId { species: Species, symbol: Symbol }
+    SymbolToGeneId { species: Species, symbol: Symbol },
+    SymbolsToGeneIds { species: Species, symbols: Vec<Symbol> }
 }
 
 mod section {
@@ -32,9 +33,10 @@ mod cmd {
     pub(crate) const SYMBOL: &str = "symbol";
     pub(crate) const SYMBOLS: &str = "symbols";
     pub(crate) const SYMBOL_TO_GENE_ID: &str = "symbol-to-gene-id";
+    pub(crate) const SYMBOLS_TO_GENE_IDS: &str = "symbols-to-gene-ids";
     pub(crate) const XREFS_CMDS: &[&str] = &[SYMBOL];
     pub(crate) const LOOKUP_CMDS: &[&str] = &[SYMBOL, SYMBOLS];
-    pub(crate) const UTIL_CMDS: &[&str] = &[SYMBOL_TO_GENE_ID];
+    pub(crate) const UTIL_CMDS: &[&str] = &[SYMBOL_TO_GENE_ID, SYMBOLS_TO_GENE_IDS];
 }
 
 mod arg {
@@ -77,7 +79,7 @@ mod get {
     pub(crate) fn symbols(matches: &ArgMatches) -> Result<Vec<Symbol>, Error> {
         let symbols: Result<Vec<Symbol>, Error> =
             matches.get_one::<String>(arg::SYMBOLS).ok_or_else(|| {
-                Error::from(format!("Missing argument {}", arg::SYMBOL))
+                Error::from(format!("Missing argument {}", arg::SYMBOLS))
             })?.as_str().split(',').map(Symbol::try_from)
                 .collect();
         symbols
@@ -142,6 +144,11 @@ pub(crate) fn get_config() -> Result<Config, Error> {
                         .arg(arg::species())
                         .arg(arg::symbol())
                 )
+                .subcommand(
+                    Command::new(cmd::SYMBOLS_TO_GENE_IDS)
+                        .arg(arg::species())
+                        .arg(arg::symbols())
+                )
         ).get_matches();
     match matches.subcommand() {
         Some((section::XREFS, section_matches)) => {
@@ -185,6 +192,11 @@ pub(crate) fn get_config() -> Result<Config, Error> {
                     let species = get::species(cmd_matches)?;
                     let symbol = get::symbol(cmd_matches)?;
                     Ok(Config::Util(UtilConfig::SymbolToGeneId { species, symbol }))
+                }
+                Some((cmd::SYMBOLS_TO_GENE_IDS, cmd_matches)) => {
+                    let species = get::species(cmd_matches)?;
+                    let symbols = get::symbols(cmd_matches)?;
+                    Ok(Config::Util(UtilConfig::SymbolsToGeneIds { species, symbols }))
                 }
                 Some((unknown_cmd, _)) => {
                     Err(unknown_cmd_error(unknown_cmd, cmd::UTIL_CMDS))

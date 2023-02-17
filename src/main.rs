@@ -39,7 +39,11 @@ fn lookup(lookup_config: LookupConfig) -> Result<(), Error> {
             Ok(())
         }
         LookupConfig::Symbols { species, symbols } => {
-            todo!()
+            let entries = lookup::symbols(species, symbols)?;
+            for (symbol, entry) in entries {
+                println!("{}\t{}", symbol, entry.id);
+            }
+            Ok(())
         }
     }
 }
@@ -49,6 +53,13 @@ fn util(util_config: UtilConfig) -> Result<(), Error> {
         UtilConfig::SymbolToGeneId { species, symbol } => {
             let gene_id = util::symbol_to_gene_id(species, symbol)?;
             println!("{gene_id}");
+            Ok(())
+        }
+        UtilConfig::SymbolsToGeneIds { species, symbols } => {
+            let gene_ids = util::symbols_to_gene_ids(species, symbols)?;
+            for (symbol, gene_id) in gene_ids {
+                println!("{}\t{}", symbol, gene_id)
+            }
             Ok(())
         }
     }

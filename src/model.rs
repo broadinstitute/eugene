@@ -5,7 +5,7 @@ use crate::error::Error;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Species(String);
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Symbol(String);
 
 #[derive(Debug, Serialize, Deserialize)]
